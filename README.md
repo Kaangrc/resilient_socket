@@ -1,7 +1,6 @@
 # resilient_socket
 
 [![CI](https://github.com/Kaangrc/resilient_socket/actions/workflows/ci.yaml/badge.svg)](https://github.com/Kaangrc/resilient_socket/actions)
-[![pub package](https://img.shields.io/badge/pub-v0.1.0--dev-blue)](https://github.com/Kaangrc/resilient_socket)
 
 Pure-Dart WebSocket resilience: decorrelated-jitter reconnection, adaptive heartbeat with RTT tracking, bounded offline buffering, subscription replay, and stream protection operators.
 
@@ -68,14 +67,14 @@ Every guarantee maps to an executable test in this repository:
 
 | Architectural Guarantee | Specification Reference | Active Verification Test Suite |
 | :--- | :--- | :--- |
-| Pure Dart & zero framework coupling | ADR-0001 | `test/scaffold_test.dart`, `test/transport/fake_transport_test.dart` |
+| Pure Dart & zero framework coupling | ADR-0001 | `test/connection_state_test.dart`, `test/transport/fake_transport_test.dart` |
 | Deterministic time & randomness discipline | ADR-0002 | `test/backoff/backoff_test.dart`, `test/transport/fake_transport_test.dart` |
 | Decorrelated jitter thundering-herd mitigation | ADR-0003, §3.1 | `test/backoff/backoff_test.dart` |
 | Sealed & exhaustive connection state machine | §3.1 | `test/connection_state_test.dart` |
 | Mathematical RTO clamping & adaptive heartbeat | §3.2 | `test/heartbeat/rtt_estimator_test.dart`, `test/heartbeat/heartbeat_monitor_test.dart` |
 | Bounded outbound buffer & dual-capacity eviction | ADR-0004, §3.3 | `test/buffer/outbound_buffer_test.dart` |
 | Flush barrier & priority-ordered replay pacing | ADR-0005, §3.4 | `test/subscription/subscription_test.dart` |
-| Single-subscription leak-free stream protection | ADR-0005, §3.5 | `test/stream_ops/stream_protection_test.dart` |
+| Single-subscription leak-free stream protection | ADR-0005, §3.5 | `test/stream_ops/stream_protection_test.dart`, `test/stream_ops/stream_protection_edge_cases_test.dart` |
 | Non-disruptive telemetry fan-out isolation | §3.6 | `test/telemetry/telemetry_test.dart` |
 | End-to-end master lifecycle matrix | §3.7 | `test/resilient_socket_test.dart` |
 

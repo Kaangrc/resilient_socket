@@ -1,3 +1,5 @@
+> **Note**: This document represents the long-term architectural roadmap. Milestone 0.1.0 strictly implements the core protocol-agnostic features detailed in Section 1.
+
 # `resilient_socket` — Package Specification v2.0
 
 **Supersedes:** v1.0. All v1 modules (backoff matrix, adaptive heartbeat/RTT, outbound buffer,
