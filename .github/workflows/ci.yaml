@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dart-lang/setup-dart@v1
+        with:
+          sdk: "3.12.2"
+      - run: dart pub get
+      - run: dart format --output=none --set-exit-if-changed .
+      - run: dart analyze --fatal-infos
+      - run: dart test --coverage=coverage
+      - run: dart pub global activate coverage
+      - run: dart pub global run coverage:format_coverage
+             --lcov --in=coverage --out=coverage/lcov.info
+             --report-on=lib --check-ignore
+      - run: dart tool/check_coverage.dart coverage/lcov.info 95
