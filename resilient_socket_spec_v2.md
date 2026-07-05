@@ -7,14 +7,14 @@ tightens the internal frame model. v2 features are **additive** — no v1 public
 **Positioning:** A pure-Dart, transport-agnostic WebSocket resilience layer engineered to the
 standards of JVM Netty / resilience4j, RSocket resumption semantics, and exchange feed-handler
 conflation queues — for fintech-grade mobile streaming where reconnect storms, UI flooding,
-token expiry, and OOM-during-outage are the four ways real apps die.
+token expiry, and OOM-during-outage are the four primary production failure modes.
 
-**Honesty contract (unchanged from v1, now with more teeth):** every README claim maps to a
+**Documentation integrity contract (unchanged from v1, strengthened in v2):** every README claim maps to a
 public symbol; every symbol maps to a test file. Two claims are *explicitly renounced* in docs
-because they are not achievable in Dart/WebSocket and pretending otherwise is amateur tell:
+because they are not achievable in Dart/WebSocket and must not be implied:
 (1) "zero-GC binary path" → we promise **zero-copy discipline**, not zero allocation;
 (2) "standard mid-session WS re-auth" → no such thing exists in RFC 6455; we promise
-**protocol-hook re-auth OR make-before-break handover**, named honestly.
+**protocol-hook re-auth OR make-before-break handover**, documented explicitly.
 
 ---
 
@@ -48,12 +48,12 @@ because they are not achievable in Dart/WebSocket and pretending otherwise is am
   `FailureClassifier` maps `(closeCode, handshakeStatus, exception)` → `transient | hard | fatal`.
   Only `hard` feeds the failure window. `fatal` (e.g. HTTP 401 on handshake with a non-refreshable
   credential) trips immediately to `Open` and surfaces `Suspended(cause: AuthRejected)` — retrying
-  a dead API key is battery arson.
+  a dead API key wastes client battery without recovery benefit.
 - **ADR-0008 — Conflation folds, it does not drop.** Window-based conflation without a fold
   function silently loses financial data (volume deltas). The engine is keyed: latest-wins is
   just `fold = (prev, next) => next`, so "drop" becomes a degenerate case of "fold", not the design.
 - **ADR-0009 — Token rotation = protocol hook first, make-before-break second, hard reconnect last.**
-  Strategy chain tried in order of user configuration. No pretense of a standard WS re-auth frame.
+  Strategy chain tried in order of user configuration. Does not assume a standard WS re-auth frame.
 - **ADR-0010 — Frames are sealed and binary-first internally.** All internal paths carry
   `TransportFrame`; `String` is a codec concern at the edges. Binary payloads are `Uint8List`
   views, never eagerly copied or decoded.
@@ -129,7 +129,7 @@ class BreakerHalfOpen extends CircuitBreakerState { final int probesRemaining; }
 ```
 
 `SocketConnectionState` (v1) gains one member: `class WaitingBreaker extends SocketConnectionState
-{ final Duration remaining; }` — the UI can honestly show "server unavailable, retrying in 24s"
+{ final Duration remaining; }` — the UI can display "server unavailable, retrying in 24s"
 instead of a lying spinner.
 
 ---
@@ -159,7 +159,7 @@ any ──(fatal classification)──▶ Open + surface Suspended(cause) to the
 | Socket exception, DNS fail, timeout while radio state unknown | `transient` | Almost always the phone, not the server; backoff handles it; breaker ignores it |
 | Handshake HTTP 500/502/503, WS close 1011 (internal error), 1013 (try again later) | `hard` | Server is up but broken/overloaded — exactly what breakers exist for |
 | WS close 1008 (policy violation), 4000–4099 vendor auth codes, handshake 401/403 | `hard`, and `fatal` if the token provider reports no fresher credential | Retrying rejected credentials is noise; if a refresh is possible, rotation runs first |
-| Server GOAWAY-style codes after ping abuse (per gRPC keepalive lesson) | `hard` + telemetry flag `serverPunishedKeepalive` | Signals misconfigured heartbeat floor |
+| Server GOAWAY-style codes after ping abuse (per gRPC keepalive guidance) | `hard` + telemetry flag `serverPunishedKeepalive` | Signals misconfigured heartbeat floor |
 
 **Composition with backoff (ADR-0006):** reconnect loop asks `breaker.allowAttempt()`. Denied →
 transition to `WaitingBreaker(remaining)` and sleep the cooldown (fake-async timer), *not* the
@@ -235,7 +235,7 @@ edges; sequence-range stitching; zero-qty emission; maxPendingKeys overflow beha
 
 **Reality check (in docs, verbatim):** RFC 6455 has no re-authentication frame. Anyone claiming
 universal "seamless mid-session re-auth" is describing either (a) an application-protocol feature
-the server must support, or (b) a connection swap hidden well. We implement both, named honestly,
+the server must support, or (b) a connection swap hidden well. Both are implemented, documented explicitly,
 as a strategy chain.
 
 **Building blocks:**
@@ -445,7 +445,7 @@ example/
 
 Facade (`resilient_socket_base.dart`) remains the single `_transition()` writer; v2 wires two
 new inputs into it (breaker gate, rotation coordinator) — the state chart in its header comment
-is updated and kept exhaustive. That file is still the artifact a Principal reviewer reads first.
+is updated and kept exhaustive. That file is the primary integration reference for maintainers.
 
 ---
 
@@ -477,7 +477,7 @@ Everything on `fake_async`; zero wall-clock waits; suite budget stays < 8s.
 
 ---
 
-## 7. Build Order for Claude Code (phase gates; each ends with green CI)
+## 7. Build Order (phase gates; each ends with green CI)
 
 **Milestone 0.1.0 — v1 core (phases 1–9 from Spec v1.0, unchanged, MUST complete first):**
 scaffold → backoff → transport+FakeTransport → facade state machine → heartbeat/RTT → buffer →
@@ -499,8 +499,7 @@ replay → stream ops+telemetry → CLI example, ADRs 1–5, pana ≥ 150, publi
 15. `memory/` ladder + guard + integration #6, conflator budget coupling. ADR-0011.
 16. README v2 (gap matrix, guarantees-from-test-names), dartdoc pass, pana 160 target,
     `flutter_ticker` order-book example. Publish 0.5.0 and open the "1.0 hardening" milestone
-    (real-world soak against two public exchange feeds before any 1.0 tag).
+    (real-world soak against two production WebSocket endpoints before any 1.0 tag).
 
-Commit discipline unchanged: conventional commits per module; history is part of the vitrine.
-No milestone starts before the previous one's CI badge, coverage gate, and pana score are green —
-the vision_vault lesson, now encoded as process.
+Commit discipline unchanged: conventional commits per module; history must remain auditable.
+No milestone starts before the previous one's CI badge, coverage gate, and pana score are green.

@@ -1,13 +1,13 @@
 # `resilient_socket` — Milestone 0.1.0 "Core Foundations" Implementation Plan
 
-**Audience:** an autonomous coding agent (Cursor / Claude Code / Antigravity).
-**Authority:** this document overrides the agent's own preferences. Where this plan specifies a
-signature, formula, constant, file path, or test expectation, the agent implements it VERBATIM.
+**Audience:** implementation engineers and maintainers.
+**Authority:** this document is normative for milestone 0.1.0 delivery. Where this plan specifies a
+signature, formula, constant, file path, or test expectation, the implementation must match it exactly.
 Deviations are defects.
 
 **Scope:** Milestone 0.1.0 only (Spec v2.0 §7, phases 1–9). NO circuit breaker, NO conflation,
 NO auth rotation, NO memory guard, NO TransportFrame refactor — those are 0.2.0+. Building them
-now is a scope violation, not initiative.
+now is out of scope for milestone 0.1.0.
 
 ---
 
@@ -51,13 +51,13 @@ Create:
 resilient_socket/
 ├── pubspec.yaml
 ├── analysis_options.yaml
-├── LICENSE                     # MIT, copyright holder: Yusuf Kaan Gürcüoğlu
+├── LICENSE                     # MIT
 ├── CHANGELOG.md                # "## 0.1.0\n- Initial release: ..." (fill at T9)
 ├── README.md                   # placeholder header only at T0; written at T9
 ├── .gitignore                  # dart defaults + coverage/
 ├── .github/workflows/ci.yaml
 ├── tool/check_coverage.dart
-├── docs/adr/                   # populated at T9
+├── doc/adr/                    # populated at T9
 ├── example/ticker_cli.dart     # populated at T8
 ├── lib/resilient_socket.dart
 └── lib/src/ ... (files created per task)
@@ -770,29 +770,29 @@ min 5s / max 30s / initial 15s, buffer defaults, replay pacing 100ms batch 5, Re
 
 ### `example/ticker_cli.dart`
 
-Pure Dart CLI (~80 lines): consts `binanceUri` (`wss://stream.binance.com:9443/ws/btcusdt@trade`)
-and `btcturkUri` (`wss://ws-feed-pro.btcturk.com`); `--exchange`, `--verbose` flags; builds a
-ResilientSocket with a `stdout` metrics listener, one SubscriptionSpec per exchange protocol,
-prints state transitions and throttled (500ms `throttleLatest`) tickers. Exists to prove the
-library against real endpoints; NOT covered by unit tests; excluded from coverage.
+Pure Dart CLI (~80 lines): accepts `--exchange` to select among two bundled public feed
+configurations (distinct subscribe/unsubscribe frame formats); optional `--verbose` flag; builds a
+ResilientSocket with a `stdout` metrics listener, one `SubscriptionSpec` per selected protocol,
+prints state transitions and throttled (500ms `throttleLatest`) tickers. Validates the library
+against live endpoints; NOT covered by unit tests; excluded from coverage.
 
 ---
 
 ## T9. Docs, ADRs, README, release hygiene
 
-- `docs/adr/0001..0005` — write per Spec v2.0 §1 texts (context/decision/consequences, ≤ 1 page each).
+- `doc/adr/0001..0005` — write per Spec v2.0 §1 texts (context/decision/consequences, ≤ 1 page each).
 - README order: CI badge + pub badge placeholder → gap matrix (v1 row set) → 30-line quickstart
   (compiles verbatim against the real API — copy from a `dart analyze`-checked snippet) →
   "Guarantees" section where each bullet is a test name from T8 → strategy docs table (the four
   backoff formulas with the attempt 0–7 delay table) → ADR links. Forbidden in README: any claim
   without a symbol+test, the words "blazingly", "production release", emoji walls.
 - CHANGELOG 0.1.0 entry listing modules factually.
-- Run `dart pub publish --dry-run` → zero warnings. Run pana locally; record score in the PR
-  description; target ≥ 150/160 (perfect score usually needs an example/ + docs, already present).
+- Run `dart pub publish --dry-run` → zero warnings. Run pana locally; record score in the release
+  checklist; target ≥ 150/160 (perfect score usually needs an example/ + docs, already present).
 
 ---
 
-## tasks.md (place at repo root; the agent maintains checkboxes; VERBATIM content below)
+## Milestone Checklist (maintained at repo root)
 
 ```markdown
 # Milestone 0.1.0 — Core Foundations
@@ -833,8 +833,8 @@ memory/frames).
 - [x] T8 Full lifecycle integration test + ticker_cli example
       Acceptance: lifecycle test green incl. exact frame order
       [ping1, subA, subB, 'early'] and exact telemetry sequence; example compiles
-      (`dart analyze example/` clean); manual run against one public feed logged
-      in PR description.
+      (`dart analyze example/` clean); manual run against one live endpoint documented
+      in the release checklist.
 - [x] T9 ADRs 0001–0005, README, CHANGELOG, coverage gate
       Acceptance: CI green with coverage ≥95% (tool/check_coverage.dart);
       `dart pub publish --dry-run` zero warnings; README quickstart snippet
@@ -843,7 +843,7 @@ memory/frames).
 
 ---
 
-## Appendix A — Forbidden-shortcut list (agent self-check before every commit)
+## Appendix A — Pre-commit verification checklist
 
 - [ ] No `// ignore` anywhere in lib/.
 - [ ] No `DateTime.now()` / `Stopwatch` in lib/ (grep must return zero).
