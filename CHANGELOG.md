@@ -1,5 +1,10 @@
 # Changelog
 
+## 0.1.1
+
+- FIX: Allow immediate message and subscription execution during `Degraded` connection states to prevent accidental outbound buffer traps.
+- TEST: Add explicit regression coverage for message propagation inside the network degradation window.
+
 ## 0.1.0
 
 ### Core Foundations & Architecture

@@ -101,12 +101,13 @@ class ResilientSocket {
 
   /// Sends [payload] ([String] or [List<int>]) over the socket.
   ///
-  /// Buffered when not [Connected]; sent immediately otherwise (subject to flush barriers).
+  /// Buffered when neither [Connected] nor [Degraded]; sent immediately otherwise
+  /// (subject to flush barriers).
   void send(Object payload, {Duration? ttl, int priority = 0}) {
     if (_state is Disposed) {
       throw StateError('Cannot send on a disposed ResilientSocket.');
     }
-    if (_state is Connected && !_isFlushingBarrier) {
+    if ((_state is Connected || _state is Degraded) && !_isFlushingBarrier) {
       _sendFrame(payload);
     } else {
       _buffer.enqueue(payload, ttl: ttl, priority: priority);
@@ -115,20 +116,22 @@ class ResilientSocket {
 
   /// Registers a persistent subscription [spec].
   ///
-  /// Sends `subscribeMessage()` immediately if [Connected] and not blocked by a flush barrier.
+  /// Sends `subscribeMessage()` immediately when [Connected] or [Degraded] and
+  /// not blocked by a flush barrier.
   void subscribe(SubscriptionSpec spec) {
     if (_state is Disposed) {
       throw StateError('Cannot subscribe on a disposed ResilientSocket.');
     }
     _registry.register(spec);
-    if (_state is Connected && !_isFlushingBarrier) {
+    if ((_state is Connected || _state is Degraded) && !_isFlushingBarrier) {
       _sendFrame(spec.subscribeMessage());
     }
   }
 
   /// Unregisters the subscription identified by [id].
   ///
-  /// Sends `unsubscribeMessage()` (if configured) when [Connected] and not blocked by a flush barrier.
+  /// Sends `unsubscribeMessage()` (if configured) when [Connected] or [Degraded]
+  /// and not blocked by a flush barrier.
   void unsubscribe(String id) {
     if (_state is Disposed) {
       throw StateError('Cannot unsubscribe on a disposed ResilientSocket.');
@@ -136,7 +139,7 @@ class ResilientSocket {
     if (!_registry.contains(id)) return;
     final spec = _registry.get(id);
     _registry.unregister(id);
-    if (_state is Connected &&
+    if ((_state is Connected || _state is Degraded) &&
         !_isFlushingBarrier &&
         spec != null &&
         spec.unsubscribeMessage != null) {

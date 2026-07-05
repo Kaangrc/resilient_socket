@@ -3,7 +3,7 @@ description: >-
   Financial-grade WebSocket resilience for Dart: decorrelated-jitter reconnection,
   adaptive heartbeat with RTT tracking, bounded offline buffering, and automatic
   subscription replay.
-version: 0.1.0
+version: 0.1.1
 repository: https://github.com/Kaangrc/resilient_socket
 topics: [websocket, network, resilience, realtime]
 

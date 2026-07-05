@@ -270,6 +270,75 @@ void main() {
       });
     });
 
+    test('send during Degraded hits the wire immediately', () {
+      fakeAsync((async) {
+        final factory = RecordingTransportFactory();
+        final socket = ResilientSocket(
+          Uri.parse('ws://test.local'),
+          options: ResilientSocketOptions(transportFactory: factory.call),
+        )..connect();
+
+        factory.created[0].completeReady();
+        async.flushMicrotasks();
+        expect(socket.state, equals(const Connected()));
+
+        final sentBefore = factory.created[0].sentData.length;
+        socket.transitionForTesting(
+          const Degraded(Duration(milliseconds: 500)),
+        );
+        expect(socket.state, isA<Degraded>());
+
+        socket.send('degraded-wire-payload');
+        async.flushMicrotasks();
+
+        expect(
+          factory.created[0].sentData.length,
+          equals(sentBefore + 1),
+        );
+        expect(
+          factory.created[0].sentData.last,
+          equals('degraded-wire-payload'),
+        );
+      });
+    });
+
+    test('subscribe during Degraded sends the frame', () {
+      fakeAsync((async) {
+        final factory = RecordingTransportFactory();
+        final socket = ResilientSocket(
+          Uri.parse('ws://test.local'),
+          options: ResilientSocketOptions(transportFactory: factory.call),
+        )..connect();
+
+        factory.created[0].completeReady();
+        async.flushMicrotasks();
+        expect(socket.state, equals(const Connected()));
+
+        final sentBefore = factory.created[0].sentData.length;
+        socket.transitionForTesting(
+          const Degraded(Duration(milliseconds: 500)),
+        );
+        expect(socket.state, isA<Degraded>());
+
+        socket.subscribe(
+          SubscriptionSpec(
+            id: 'degraded-channel',
+            subscribeMessage: () => 'SUB:degraded-channel',
+          ),
+        );
+        async.flushMicrotasks();
+
+        expect(
+          factory.created[0].sentData.length,
+          equals(sentBefore + 1),
+        );
+        expect(
+          factory.created[0].sentData.last,
+          equals('SUB:degraded-channel'),
+        );
+      });
+    });
+
     test(
       'heartbeat: StaleSuspected drives Degraded, PongReceived drives Degraded->Connected',
       () {
